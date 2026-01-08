@@ -1,3 +1,22 @@
+# Required ESPHome API action
+set_alarm_state(alarm_state: string)
+
+# ------------------------------------------------------------
+# ⚠️ DISCLAIMER / HAFTUNGSAUSSCHLUSS
+#
+# DE:
+# Diese Software wird "wie sie ist" (as is) bereitgestellt.
+# Sie ist kein zertifiziertes Alarmsystem und darf nicht
+# zum Schutz von Leben oder Eigentum verwendet werden.
+# Die Nutzung erfolgt auf eigene Verantwortung.
+#
+# EN:
+# This software is provided "as is".
+# It is not a certified alarm system and must not be relied on
+# for the protection of life or property.
+# Use of this software is at your own risk.
+# ------------------------------------------------------------
+
 # VibeAlarmSys Bridge
 Home Assistant Custom Integration
 
