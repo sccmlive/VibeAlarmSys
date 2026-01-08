@@ -1,22 +1,3 @@
-# Required ESPHome API action
-set_alarm_state(alarm_state: string)
-
-# ------------------------------------------------------------
-# ⚠️ DISCLAIMER / HAFTUNGSAUSSCHLUSS
-#
-# DE:
-# Diese Software wird "wie sie ist" (as is) bereitgestellt.
-# Sie ist kein zertifiziertes Alarmsystem und darf nicht
-# zum Schutz von Leben oder Eigentum verwendet werden.
-# Die Nutzung erfolgt auf eigene Verantwortung.
-#
-# EN:
-# This software is provided "as is".
-# It is not a certified alarm system and must not be relied on
-# for the protection of life or property.
-# Use of this software is at your own risk.
-# ------------------------------------------------------------
-
 # VibeAlarmSys Bridge
 Home Assistant Custom Integration
 
@@ -63,7 +44,6 @@ Der aktuelle Alarmstatus wird automatisch an das ESPHome-Gerät übertragen.
 
 ### Installation über HACS (empfohlen)
 
-#### HACS installieren (falls noch nicht vorhanden)
 Wenn **HACS** noch nicht installiert ist, folge bitte der offiziellen Anleitung:  
 👉 https://hacs.xyz/docs/setup/prerequisites
 
@@ -176,3 +156,19 @@ The ESPHome device must provide the following API action:
 
 ```yaml
 set_alarm_state(alarm_state: string)
+
+# ==================================================================
+# DISCLAIMER / HAFTUNGSAUSSCHLUSS
+#
+# DE:
+# Diese Software wird "wie sie ist" (as is) bereitgestellt.
+# Sie ist kein zertifiziertes Alarmsystem und darf nicht
+# zum Schutz von Leben oder Eigentum verwendet werden.
+# Die Nutzung erfolgt auf eigene Verantwortung.
+#
+# EN:
+# This software is provided "as is".
+# It is not a certified alarm system and must not be relied upon
+# for the protection of life or property.
+# Use of this software is at your own risk.
+# ==================================================================
