@@ -1,4 +1,4 @@
-# Vibrationsalarm Bridge
+# VibeAlarmSys Bridge
 Home Assistant Custom Integration
 
 ---
