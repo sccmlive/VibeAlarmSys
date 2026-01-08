@@ -7,12 +7,12 @@ Home Assistant Custom Integration
 
 ### 1️⃣ Add to HACS
 [![Add to HACS](https://my.home-assistant.io/badges/hacs_repository.svg)](
-https://my.home-assistant.io/redirect/hacs_repository/?owner=sccmlive&repository=vibrationsalarm-bridge-repo&category=integration
+https://my.home-assistant.io/redirect/hacs_repository/?owner=sccmlive&repository=VibeAlarmSys&category=integration
 )
 
 ### 2️⃣ Start setup
 [![Start setup](https://my.home-assistant.io/badges/config_flow_start.svg)](
-https://my.home-assistant.io/redirect/config_flow_start/?domain=vibrationsalarm_bridge
+https://my.home-assistant.io/redirect/config_flow_start/?domain=vibe_alarm_sys
 )
 
 > **Hinweis / Note:**  
@@ -23,7 +23,7 @@ https://my.home-assistant.io/redirect/config_flow_start/?domain=vibrationsalarm_
 ## 🇩🇪 Deutsch
 
 ### Beschreibung
-**Vibrationsalarm Bridge** verbindet ein vorhandenes Alarm-System in Home Assistant  
+**VibeAlarmSys Bridge** verbindet ein vorhandenes Alarm-System in Home Assistant  
 (`alarm_control_panel`, z. B. Alarmo oder andere Integrationen) mit einem  
 ESPHome-basierten Vibrationsalarm.
 
@@ -62,7 +62,7 @@ Nach dem Neustart von Home Assistant:
 
 1. **Einstellungen → Geräte & Dienste**
 2. **Integration hinzufügen**
-3. **Vibrationsalarm Bridge** auswählen  
+3. **VibeAlarmSys Bridge** auswählen  
    oder direkt über den Button oben starten
 
 Im Einrichtungsdialog:
@@ -95,7 +95,7 @@ Das Feld **Node Name** ist ein optionales Fallback.
 ## 🇬🇧 English
 
 ### Description
-**Vibrationsalarm Bridge** connects an existing Home Assistant alarm system  
+**VibeAlarmSys Bridge** connects an existing Home Assistant alarm system  
 (`alarm_control_panel`, e.g. Alarmo or other integrations) to an  
 ESPHome-based vibration alarm device.
 
@@ -128,7 +128,7 @@ After restarting Home Assistant:
 
 1. Go to **Settings → Devices & Services**
 2. Click **Add Integration**
-3. Select **Vibrationsalarm Bridge**  
+3. Select **VibeAlarmSys Bridge**  
    or start the setup directly using the button above
 
 In the setup dialog:
@@ -166,3 +166,5 @@ The ESPHome device must provide the following API action:
 set_alarm_state(alarm_state: string)
 
 This software is provided “as is”. It is not a certified alarm system and must not be relied upon for life or property safety.
+
+```

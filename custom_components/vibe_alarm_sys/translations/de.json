@@ -2,7 +2,7 @@
   "config": {
     "step": {
       "user": {
-        "title": "Vibrationsalarm Bridge",
+        "title": "VibeAlarmSys Bridge",
         "description": "Wähle ein Alarm Panel und ein ESPHome-Gerät."
       }
     },

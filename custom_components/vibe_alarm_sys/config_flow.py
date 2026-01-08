@@ -59,7 +59,7 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors[CONF_NODE_NAME] = "node_required"
 
             if not errors:
-                title = f"Vibrationsalarm Bridge ({alarm_entity} → {node_name})"
+                title = f"VibeAlarmSys Bridge ({alarm_entity} → {node_name})"
                 return self.async_create_entry(
                     title=title,
                     data={

@@ -1,4 +1,4 @@
-DOMAIN = "vibrationsalarm_bridge"
+DOMAIN = "vibe_alarm_sys"
 
 CONF_ALARM_ENTITY = "alarm_entity"
 CONF_ESPHOME_DEVICE = "esphome_device_id"
