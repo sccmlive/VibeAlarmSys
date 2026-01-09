@@ -3,7 +3,17 @@
     "step": {
       "user": {
         "title": "VibeAlarmSys Bridge",
-        "description": "Select an alarm panel and one or more ESPHome devices."
+        "description": "Select an alarm panel and one or more ESPHome devices. Optionally, add additional entities (e.g., camera motion binary_sensors) that should trigger a short alert pulse.",
+        "data": {
+          "alarm_entity": "Alarm Panel",
+          "esphome_device_ids": "ESPHome devices",
+          "node_names": "Node names (optional)",
+          "send_panel_name": "Send panel name",
+          "send_source_text": "Send trigger source",
+          "trigger_entities": "Trigger entities (e.g., camera motion)",
+          "trigger_reset_seconds": "Reset after (seconds)",
+          "trigger_cooldown_seconds": "Cooldown (seconds)"
+        }
       }
     },
     "error": {

@@ -3,7 +3,17 @@
     "step": {
       "user": {
         "title": "VibeAlarmSys Bridge",
-        "description": "Wähle ein Alarm Panel und ein oder mehrere ESPHome-Geräte."
+        "description": "Wähle ein Alarm-Panel und ein oder mehrere ESPHome-Geräte. Optional kannst du zusätzliche Entitäten (z. B. Kamera-Bewegung) hinzufügen, die einen kurzen Alarm-Puls auslösen.",
+        "data": {
+          "alarm_entity": "Alarm-Panel",
+          "esphome_device_ids": "ESPHome-Geräte",
+          "node_names": "Node-Namen (optional)",
+          "send_panel_name": "Panel-Name senden",
+          "send_source_text": "Auslöser-Text senden",
+          "trigger_entities": "Zusätzliche Trigger-Entitäten (z. B. Kamera-Bewegung)",
+          "trigger_reset_seconds": "Zurücksetzen nach (Sekunden)",
+          "trigger_cooldown_seconds": "Cooldown (Sekunden)"
+        }
       }
     },
     "error": {
