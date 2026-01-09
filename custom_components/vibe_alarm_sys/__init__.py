@@ -180,7 +180,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if state_str == "triggered":
             # Small delay to avoid race conditions where the alarm state changes
             # slightly before the triggering sensor state change is processed.
-            await asyncio.sleep(0.25)
+            # Wait a short moment so the triggering sensor's state change can be
+            # processed before we pick the last trigger (fixes race conditions).
+            await asyncio.sleep(1.5)
             source = _pick_recent_trigger_name() or _fallback_scan_last_changed() or "Alarm"
             for node_prefix, _pn in targets:
                 await _safe_call(f"{node_prefix}_set_alarm_source", {"alarm_source": source})
