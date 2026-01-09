@@ -259,14 +259,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entry.async_on_unload(unsub_triggers)
 
     # --- Listener 2: Track recently triggered sensors (hybrid auto-tracking) ---
-    _AUTO_DEVICE_CLASSES = {"motion", "opening"}
+    _AUTO_DEVICE_CLASSES = {"motion", "opening", "door", "window", "garage_door", "lock", "occupancy", "presence"}
 
     def _is_meaningful_trigger(old_s: str | None, new_s: str | None) -> bool:
         if not new_s or new_s in ("unknown", "unavailable"):
             return False
 
         # Treat transitions into "on" or "open" as triggers.
-        trigger_states = {"on", "open"}
+        trigger_states = {"on", "open", "unlocked"}
         if new_s in trigger_states and old_s not in trigger_states:
             return True
 

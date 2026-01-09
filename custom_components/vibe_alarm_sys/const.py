@@ -23,7 +23,7 @@ DEFAULT_SEND_SOURCE_TEXT = True
 CONF_ALARM_TRIGGER_LOOKBACK_SECONDS = "alarm_trigger_lookback_seconds"
 DEFAULT_ALARM_TRIGGER_LOOKBACK_SECONDS = 10
 
-# If enabled, automatically track binary_sensors with relevant device_class (motion/opening)
+# If enabled, automatically track binary_sensors with relevant device_class (motion/opening/door/window/garage_door/lock/occupancy/presence)
 # so users don't need to manually select every sensor.
 CONF_AUTO_TRACK_DEVICE_CLASSES = "auto_track_device_classes"
 DEFAULT_AUTO_TRACK_DEVICE_CLASSES = True
