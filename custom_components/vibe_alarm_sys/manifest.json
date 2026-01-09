@@ -1,7 +1,7 @@
 {
   "domain": "vibe_alarm_sys",
   "name": "VibeAlarmSys Bridge",
-  "version": "1.9.7",
+  "version": "1.3.10",
   "documentation": "https://github.com/sccmlive/VibeAlarmSys",
   "issue_tracker": "https://github.com/sccmlive/VibeAlarmSys/issues",
   "codeowners": [

@@ -3,7 +3,15 @@
     "step": {
       "user": {
         "title": "VibeAlarmSys Bridge",
-        "description": "Select an alarm panel and one or more ESPHome devices."
+        "description": "Select an alarm panel and one or more ESPHome devices.",
+        "data": {
+          "alarm_entity": "Alarm Panel",
+          "esphome_device_ids": "ESPHome devices",
+          "node_name": "Node name (optional)",
+          "send_panel_name": "Send panel name",
+          "send_source_text": "Send source text",
+          "trigger_entities": "Additional triggers (optional)"
+        }
       }
     },
     "error": {

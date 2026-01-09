@@ -4,6 +4,7 @@ CONF_ALARM_ENTITY = "alarm_entity"
 CONF_ESPHOME_DEVICE = "esphome_device_id"
 CONF_ESPHOME_DEVICES = "esphome_device_ids"
 CONF_NODE_NAME = "node_name"
+CONF_TRIGGER_ENTITIES = "trigger_entities"
 
 CONF_SEND_PANEL_NAME = "send_panel_name"
 CONF_SEND_SOURCE_TEXT = "send_source_text"

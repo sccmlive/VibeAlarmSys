@@ -17,9 +17,12 @@ from .const import (
     CONF_NODE_NAME,
     CONF_SEND_PANEL_NAME,
     CONF_SEND_SOURCE_TEXT,
+    CONF_TRIGGER_ENTITIES,
     DOMAIN,
     TRIGGER_WINDOW_SECONDS,
 )
+
+ACTIVE_STATES = {"on", "open", "opened", "true", "detected"}
 
 PLATFORMS: list[str] = []
 
@@ -46,7 +49,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     alarm_entity = entry.data[CONF_ALARM_ENTITY]
 
     send_panel_name = entry.data.get(CONF_SEND_PANEL_NAME, True)
-    send_source_text = entry.data.get(CONF_SEND_SOURCE_TEXT, True)
+    send_source_text = entry.data.get(CONF_SEND_SOURCE_TEXT,
+    CONF_TRIGGER_ENTITIES, True)
 
     # --- Multi ESPHome targets ---
     device_ids = entry.data.get(CONF_ESPHOME_DEVICES) or []
@@ -88,6 +92,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         dev = dev_reg.async_get(dev_id)
         pn = dev.name if dev and dev.name else alarm_panel_name
         targets.append((node_prefix, pn))
+    manual_triggers = set(entry.data.get(CONF_TRIGGER_ENTITIES, []) or [])
     recent_triggers: deque[tuple[str, dt_util.dt.datetime]] = deque(maxlen=120)
 
     def _record_trigger(entity_id: str) -> None:
@@ -164,8 +169,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not new_state or not old_state:
             return
 
-        # Only count a real trigger: off -> on
-        if old_state.state == "off" and new_state.state == "on":
+        # Count a real trigger for alarm-like sensors
+        old = (old_state.state or "").lower()
+        new = (new_state.state or "").lower()
+        if new in ("unknown", "unavailable", "none"):
+            return
+
+        # 1) Always respect manually selected trigger entities (e.g., Arlo motion binary_sensors)
+        if entity_id in manual_triggers:
+            if old != new and new in ACTIVE_STATES:
+                _record_trigger(entity_id)
+            return
+
+        # 2) Universal tracking for binary_sensors used in alarm setups
+        if old != new and new in ACTIVE_STATES:
             _record_trigger(entity_id)
 
     unsub_bus = hass.bus.async_listen("state_changed", _handle_any_state_change)

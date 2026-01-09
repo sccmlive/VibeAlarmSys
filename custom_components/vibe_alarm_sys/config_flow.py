@@ -17,6 +17,7 @@ from .const import (
     CONF_NODE_NAME,
     CONF_SEND_PANEL_NAME,
     CONF_SEND_SOURCE_TEXT,
+    CONF_TRIGGER_ENTITIES,
     DEFAULT_SEND_PANEL_NAME,
     DEFAULT_SEND_SOURCE_TEXT,
 )
@@ -52,6 +53,7 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 esphome_device_ids = [user_input[CONF_ESPHOME_DEVICE]]
             send_panel_name = user_input.get(CONF_SEND_PANEL_NAME, DEFAULT_SEND_PANEL_NAME)
             send_source_text = user_input.get(CONF_SEND_SOURCE_TEXT, DEFAULT_SEND_SOURCE_TEXT)
+            trigger_entities = user_input.get(CONF_TRIGGER_ENTITIES, []) or []
 
             node_name = user_input.get(CONF_NODE_NAME, "").strip()
             if not node_name:
@@ -72,6 +74,7 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         CONF_NODE_NAME: node_name,
                         CONF_SEND_PANEL_NAME: send_panel_name,
                         CONF_SEND_SOURCE_TEXT: send_source_text,
+                        CONF_TRIGGER_ENTITIES: trigger_entities,
                     },
                 )
 
@@ -86,6 +89,9 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Optional(CONF_NODE_NAME, default=""): str,
                 vol.Optional(CONF_SEND_PANEL_NAME, default=DEFAULT_SEND_PANEL_NAME): bool,
                 vol.Optional(CONF_SEND_SOURCE_TEXT, default=DEFAULT_SEND_SOURCE_TEXT): bool,
+                vol.Optional(CONF_TRIGGER_ENTITIES, default=[]): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+                ),
             }
         )
 
