@@ -5,197 +5,145 @@ from datetime import timedelta
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.event import async_track_state_change_event
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import (
+    CONF_ALARM_ENTITY,
+    CONF_ESPHOME_DEVICE,
+    CONF_NODE_NAME,
+    CONF_SEND_PANEL_NAME,
+    CONF_SEND_SOURCE_TEXT,
+    DOMAIN,
+    TRIGGER_WINDOW_SECONDS,
+)
 
-RELEVANT_DEVICE_CLASSES = {
-    "door",
-    "window",
-    "opening",
-    "garage_door",
-    "motion",
-    "occupancy",
-    "presence",
-    "lock",
-}
-
-ACTIVE_STATES = {"on", "open", "opened", "true"}
+PLATFORMS: list[str] = []
 
 
-def _normalize_boolish(state: str) -> str:
-    # Some integrations may emit True/False, keep it consistent
-    if state is True:
-        return "true"
-    if state is False:
-        return "false"
-    return str(state).lower()
+def _friendly_name(hass: HomeAssistant, entity_id: str) -> str:
+    """Return a readable name for an entity."""
+    st = hass.states.get(entity_id)
+    if not st:
+        return entity_id
 
+    # Preferred: HA State.name (already resolves friendly name)
+    name = getattr(st, "name", None)
+    if isinstance(name, str) and name.strip():
+        return name.strip()
 
-def _pick_esphome_service(hass: HomeAssistant, base: str) -> str | None:
-    """
-    Find a working esphome service name in hass.services.
-    Tries a couple common patterns.
-    """
-    candidates = [
-        base,
-        base.replace("-", "_"),
-        base.replace("_", "-"),
-    ]
-    for svc in candidates:
-        if hass.services.has_service("esphome", svc):
-            return svc
-    return None
+    fn = (st.attributes or {}).get("friendly_name")
+    if isinstance(fn, str) and fn.strip():
+        return fn.strip()
 
-
-async def _safe_esphome_call(
-    hass: HomeAssistant,
-    service: str,
-    data: dict,
-) -> None:
-    if not hass.services.has_service("esphome", service):
-        return
-    await hass.services.async_call("esphome", service, data, blocking=False)
+    return entity_id
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    alarm_entity: str = entry.data["alarm_entity"]
-    esphome_devices: list[str] = list(entry.data.get("esphome_devices") or [])
+    alarm_entity = entry.data[CONF_ALARM_ENTITY]
+    node = entry.data[CONF_NODE_NAME]  # must match ESPHome service prefix in HA (underscored)
 
-    # Default to 60 seconds if missing/empty
-    lookback_seconds = int(entry.data.get("alarm_trigger_lookback_seconds") or 60)
-    lookback_delta = timedelta(seconds=lookback_seconds)
+    send_panel_name = entry.data.get(CONF_SEND_PANEL_NAME, True)
+    send_source_text = entry.data.get(CONF_SEND_SOURCE_TEXT, True)
 
-    # Cache of recent triggers: newest appended at end
-    trigger_cache: deque[dict] = deque(maxlen=300)
+    # ESPHome actions appear as services under "esphome"
+    svc_set_state = f"{node}_set_alarm_state"
+    svc_set_source = f"{node}_set_alarm_source"
+    svc_set_panel = f"{node}_set_alarm_panel_name"
 
-    # --- Resolve ESPHome service names once (lazy-ish; we also re-check later) ---
-    # Expected services (example):
-    #  - esphome.<device>_set_alarm_state
-    #  - esphome.<device>_set_alarm_source
-    #  - esphome.<device>_set_alarm_panel_name
-    #
-    # Here, "<device>" is the ESPHome entity_id without the "esphome." prefix,
-    # e.g. "esphome.vibealarm_wohnzimmer" -> "vibealarm_wohnzimmer"
-    def device_slug(esphome_entity_id: str) -> str:
-        return esphome_entity_id.split(".", 1)[-1].strip()
+    # Panel name (optional): take ESPHome device name, else alarm entity friendly name
+    dev_reg = dr.async_get(hass)
+    device = dev_reg.async_get(entry.data[CONF_ESPHOME_DEVICE])
+    panel_name = device.name if device and device.name else _friendly_name(hass, alarm_entity)
 
-    def svc_state(slug: str) -> str:
-        return f"{slug}_set_alarm_state"
+    # Ring buffer: recently triggered binary_sensors (entity_id, timestamp)
+    recent_triggers: deque[tuple[str, dt_util.dt.datetime]] = deque(maxlen=120)
 
-    def svc_source(slug: str) -> str:
-        return f"{slug}_set_alarm_source"
+    def _record_trigger(entity_id: str) -> None:
+        recent_triggers.append((entity_id, dt_util.utcnow()))
 
-    def svc_panel(slug: str) -> str:
-        return f"{slug}_set_alarm_panel_name"
+    def _pick_recent_trigger_name() -> str | None:
+        """Return friendly name of the most recent trigger within the time window."""
+        if not recent_triggers:
+            return None
+        now = dt_util.utcnow()
+        window = timedelta(seconds=TRIGGER_WINDOW_SECONDS)
 
-    async def push_to_all(state_text: str | None = None, source_text: str | None = None) -> None:
-        # Push to all selected ESPHome devices
-        for dev in esphome_devices:
-            slug = device_slug(dev)
-            if not slug:
+        # check newest -> oldest
+        for entity_id, ts in reversed(recent_triggers):
+            if now - ts > window:
                 continue
+            return _friendly_name(hass, entity_id)
+        return None
 
-            if state_text is not None:
-                service = _pick_esphome_service(hass, svc_state(slug))
-                if service:
-                    await _safe_esphome_call(hass, service, {"state": state_text})
+    async def _safe_call(service: str, data: dict) -> None:
+        """Call ESPHome action only if the service exists (device online + action present)."""
+        if not hass.services.has_service("esphome", service):
+            return
+        await hass.services.async_call("esphome", service, data, blocking=False)
 
-            if source_text is not None:
-                service = _pick_esphome_service(hass, svc_source(slug))
-                if service:
-                    await _safe_esphome_call(hass, service, {"source": source_text})
+    async def _push_state(state_str: str) -> None:
+        # 1) Always send alarm state
+        await _safe_call(svc_set_state, {"alarm_state": state_str})
 
-            # Optional: also push panel name if your ESPHome supports it
-            # We'll use the alarm entity's friendly name if available.
-            panel_name = None
-            st = hass.states.get(alarm_entity)
-            if st:
-                panel_name = st.attributes.get("friendly_name") or st.name
-            if panel_name:
-                service = _pick_esphome_service(hass, svc_panel(slug))
-                if service:
-                    await _safe_esphome_call(hass, service, {"name": panel_name})
+        # 2) Optional: panel name
+        if send_panel_name:
+            await _safe_call(svc_set_panel, {"panel_name": panel_name})
 
-    # --- Binary sensor trigger tracking (universal) ---
+        # 3) Optional: source text
+        if not send_source_text:
+            return
+
+        if state_str == "triggered":
+            source = _pick_recent_trigger_name() or "Unbekannter Auslöser"
+            await _safe_call(svc_set_source, {"alarm_source": source})
+        else:
+            # Clear source on non-trigger states (ESP ignores '-' in your display logic)
+            await _safe_call(svc_set_source, {"alarm_source": "-"})
+
+    # --- Listener 1: Alarm panel state changes (per entry!) ---
     @callback
-    def on_binary_sensor_change(event):
-        entity_id = event.data.get("entity_id")
-        old_state = event.data.get("old_state")
-        new_state = event.data.get("new_state")
-
-        if not entity_id or not new_state:
-            return
-
-        new_s = _normalize_boolish(new_state.state)
-        if new_s in ("unknown", "unavailable", "none"):
-            return
-
-        attrs = new_state.attributes or {}
-        device_class = attrs.get("device_class")
-
-        if device_class not in RELEVANT_DEVICE_CLASSES:
-            return
-
-        old_s = _normalize_boolish(old_state.state) if old_state else None
-        if old_s == new_s:
-            return
-
-        # Trigger when sensor goes into an "active" state
-        if new_s not in ACTIVE_STATES:
-            return
-
-        trigger_cache.append(
-            {
-                "ts": dt_util.utcnow(),
-                "entity_id": entity_id,
-                "name": attrs.get("friendly_name") or entity_id,
-                "device_class": device_class,
-                "state": new_s,
-            }
-        )
-
-    async_track_state_change_event(hass, "binary_sensor", on_binary_sensor_change)
-
-    # --- Alarm state tracking ---
-    @callback
-    def on_alarm_change(event):
+    def _handle_alarm_event(event) -> None:
         new_state = event.data.get("new_state")
         if not new_state:
             return
 
-        alarm_state = _normalize_boolish(new_state.state)
+        st = new_state.state
+        if st in (None, "unknown", "unavailable"):
+            return
 
-        async def _handle():
-            # Always push state updates
-            await push_to_all(state_text=alarm_state)
+        hass.async_create_task(_push_state(st))
 
-            # When triggered, try to infer sensor source in lookback window
-            if alarm_state == "triggered":
-                now = dt_util.utcnow()
-                chosen = None
-                for item in reversed(trigger_cache):
-                    if now - item["ts"] <= lookback_delta:
-                        chosen = item
-                        break
+    unsub_alarm = async_track_state_change_event(hass, [alarm_entity], _handle_alarm_event)
+    entry.async_on_unload(unsub_alarm)
 
-                # Prefer inferred sensor name; fallback to alarm panel source; final fallback "Alarm"
-                source_text = None
-                if chosen:
-                    source_text = chosen["name"]
-                else:
-                    source_text = new_state.attributes.get("source") or "Alarm"
+    # --- Listener 2: Track recently triggered binary_sensors (universal) ---
+    @callback
+    def _handle_any_state_change(event) -> None:
+        entity_id = event.data.get("entity_id")
+        if not entity_id or not entity_id.startswith("binary_sensor."):
+            return
 
-                await push_to_all(source_text=source_text)
+        new_state = event.data.get("new_state")
+        old_state = event.data.get("old_state")
+        if not new_state or not old_state:
+            return
 
-        hass.async_create_task(_handle())
+        # Only count a real trigger: off -> on
+        if old_state.state == "off" and new_state.state == "on":
+            _record_trigger(entity_id)
 
-    async_track_state_change_event(hass, alarm_entity, on_alarm_change)
+    unsub_bus = hass.bus.async_listen("state_changed", _handle_any_state_change)
+    entry.async_on_unload(unsub_bus)
 
-    # Push initial state once after setup (helps after restart)
-    st0 = hass.states.get(alarm_entity)
-    if st0:
-        hass.async_create_task(push_to_all(state_text=_normalize_boolish(st0.state)))
+    # On startup: push current state once
+    cur = hass.states.get(alarm_entity)
+    if cur and cur.state not in (None, "unknown", "unavailable"):
+        hass.async_create_task(_push_state(cur.state))
 
+    return True
+
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     return True

@@ -44,8 +44,15 @@ Der aktuelle Alarmstatus wird automatisch an das ESPHome-Gerät übertragen.
 
 ### Installation über HACS (empfohlen)
 
+#### HACS installieren (falls noch nicht vorhanden)
 Wenn **HACS** noch nicht installiert ist, folge bitte der offiziellen Anleitung:  
 👉 https://hacs.xyz/docs/setup/prerequisites
+
+Kurzfassung:
+1. Terminal / SSH in Home Assistant öffnen
+2. Installationsskript ausführen
+3. Home Assistant neu starten
+4. HACS unter **Einstellungen → Geräte & Dienste** hinzufügen
 
 ---
 
@@ -109,6 +116,7 @@ The current alarm state is automatically sent to the ESPHome device.
 
 ### Installation via HACS (recommended)
 
+#### Install HACS (if not already installed)
 If **HACS** is not installed yet, follow the official guide:  
 👉 https://hacs.xyz/docs/setup/prerequisites
 
@@ -150,27 +158,13 @@ The **Node Name** field is an optional fallback.
 
 ---
 
-
 ## ⚙️ ESPHome Requirements
 
+The ESPHome device must provide the following API action:
+
 ```yaml
-# The ESPHome device must provide the following API action:
 set_alarm_state(alarm_state: string)
 
-# =============================================================================
-# DISCLAIMER / HAFTUNGSAUSSCHLUSS
-#
-# DE:
-# Diese Software wird "wie sie ist" (as is) bereitgestellt.
-# Sie ist kein zertifiziertes Alarmsystem und darf nicht
-# zum Schutz von Leben oder Eigentum verwendet werden.
-# Die Nutzung erfolgt auf eigene Verantwortung.
-#
-# EN:
-# This software is provided "as is".
-# It is not a certified alarm system and must not be relied upon
-# for the protection of life or property.
-# Use of this software is at your own risk.
-# =============================================================================
-# ==================================================================
+This software is provided “as is”. It is not a certified alarm system and must not be relied upon for life or property safety.
 
+```
