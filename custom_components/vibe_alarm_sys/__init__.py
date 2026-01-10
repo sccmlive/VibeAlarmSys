@@ -1,3 +1,8 @@
+
+async def _async_update_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Reload the entry when options are changed."""
+    await hass.config_entries.async_reload(entry.entry_id)
+
 from __future__ import annotations
 
 from collections import deque
@@ -47,15 +52,18 @@ def _friendly_name(hass: HomeAssistant, entity_id: str) -> str:
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    alarm_entity = entry.data[CONF_ALARM_ENTITY]
+    def _cfg(key, default=None):
+        return entry.options.get(key, entry.data.get(key, default))
 
-    send_panel_name = entry.data.get(CONF_SEND_PANEL_NAME, True)
-    send_source_text = entry.data.get(CONF_SEND_SOURCE_TEXT, True)
+    alarm_entity = _cfg(CONF_ALARM_ENTITY, entry.data[CONF_ALARM_ENTITY])
+
+    send_panel_name = bool(_cfg(CONF_SEND_PANEL_NAME, True))
+    send_source_text = bool(_cfg(CONF_SEND_SOURCE_TEXT, True))
 
     # --- Multi ESPHome targets ---
-    device_ids = entry.data.get(CONF_ESPHOME_DEVICES) or []
-    if not device_ids and entry.data.get(CONF_ESPHOME_DEVICE):
-        device_ids = [entry.data[CONF_ESPHOME_DEVICE]]
+    device_ids = _cfg(CONF_ESPHOME_DEVICES, []) or []
+    if not device_ids and _cfg(CONF_ESPHOME_DEVICE):
+        device_ids = [_cfg(CONF_ESPHOME_DEVICE)]
 
     def _slugify(val: str) -> str:
         v = val.lower()
@@ -73,7 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             if domain == "esphome" and isinstance(ident, str) and ident.strip():
                 return _slugify(ident)
         # Fallback: stored node_name (legacy)
-        stored = entry.data.get(CONF_NODE_NAME)
+        stored = _cfg(CONF_NODE_NAME)
         if isinstance(stored, str) and stored.strip():
             return _slugify(stored)
         # Last fallback: device name
@@ -92,7 +100,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         dev = dev_reg.async_get(dev_id)
         pn = dev.name if dev and dev.name else alarm_panel_name
         targets.append((node_prefix, pn))
-    manual_triggers = set(entry.data.get(CONF_TRIGGER_ENTITIES, []) or [])
+    manual_triggers = set(_cfg(CONF_TRIGGER_ENTITIES, []) or [])
     recent_triggers: deque[tuple[str, dt_util.dt.datetime]] = deque(maxlen=120)
 
     # Cooldown to avoid spamming ESPHome when a manual trigger chatters.
@@ -268,6 +276,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     unsub_bus = hass.bus.async_listen("state_changed", _handle_any_state_change)
     entry.async_on_unload(unsub_bus)
+
+    # Reload when options are changed (so edits apply without deleting the entry)
+    entry.async_on_unload(entry.add_update_listener(_async_update_listener))
 
     # On startup: push current state once
     cur = hass.states.get(alarm_entity)

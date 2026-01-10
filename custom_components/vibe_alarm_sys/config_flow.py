@@ -6,6 +6,7 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant import config_entries
+from homeassistant.core import callback
 from homeassistant.helpers import selector
 from homeassistant.helpers.device_registry import async_get as async_get_dev_reg
 
@@ -96,3 +97,45 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
         return self.async_show_form(step_id="user", data_schema=schema, errors=errors)
+
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry):
+        return VibeAlarmSysOptionsFlowHandler(config_entry)
+
+
+class VibeAlarmSysOptionsFlowHandler(config_entries.OptionsFlow):
+    """Handle options for an existing entry (edit via ⋮ → Optionen)."""
+
+    def __init__(self, entry: config_entries.ConfigEntry) -> None:
+        self._entry = entry
+
+    async def async_step_init(self, user_input=None):
+        if user_input is not None:
+            return self.async_create_entry(title="", data=user_input)
+
+        # Prefer options, fall back to initial config (data), then default.
+        def _get(key, default):
+            return self._entry.options.get(key, self._entry.data.get(key, default))
+
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_ALARM_ENTITY, default=_get(CONF_ALARM_ENTITY, "")): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="alarm_control_panel")
+                ),
+                vol.Required(CONF_ESPHOME_DEVICES, default=_get(CONF_ESPHOME_DEVICES, [])): selector.DeviceSelector(
+                    selector.DeviceSelectorConfig(integration="esphome", multiple=True)
+                ),
+                vol.Optional(CONF_NODE_NAME, default=_get(CONF_NODE_NAME, "")): str,
+                vol.Optional(CONF_SEND_PANEL_NAME, default=_get(CONF_SEND_PANEL_NAME, DEFAULT_SEND_PANEL_NAME)): bool,
+                vol.Optional(CONF_SEND_SOURCE_TEXT, default=_get(CONF_SEND_SOURCE_TEXT, DEFAULT_SEND_SOURCE_TEXT)): bool,
+                vol.Optional(CONF_TRIGGER_ENTITIES, default=_get(CONF_TRIGGER_ENTITIES, [])): selector.EntitySelector(
+                    selector.EntitySelectorConfig(domain="binary_sensor", multiple=True)
+                ),
+            }
+        )
+
+        return self.async_show_form(step_id="init", data_schema=schema)
+
+
