@@ -5,7 +5,10 @@ Home Assistant Custom Integration
 
 ## 🎥 Erklärvideo / Setup Guide
 
-[![VibeAlarmSys Bridge – Setup & Erklärung](https://img.youtube.com/vi/YGE9YTNnsAs/0.jpg)](https://www.youtube.com/watch?v=YGE9YTNnsAs)
+<a href="https://www.youtube.com/watch?v=YGE9YTNnsAs">
+  <img src="https://img.youtube.com/vi/YGE9YTNnsAs/0.jpg" width="320" />
+</a>
+
 
 ## ➕ Add to Home Assistant
 
