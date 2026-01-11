@@ -3,6 +3,10 @@ Home Assistant Custom Integration
 
 ---
 
+## 🎥 Erklärvideo / Setup Guide
+
+[![VibeAlarmSys Bridge – Setup & Erklärung](https://img.youtube.com/vi/YGE9YTNnsAs/0.jpg)](https://www.youtube.com/watch?v=YGE9YTNnsAs)
+
 ## ➕ Add to Home Assistant
 
 ### 1️⃣ Add to HACS
