@@ -2,13 +2,10 @@
 Home Assistant Custom Integration
 
 ---
-
 ## 🎥 Erklärvideo / Setup Guide
 
-<a href="https://www.youtube.com/watch?v=YGE9YTNnsAs">
-  <img src="https://img.youtube.com/vi/YGE9YTNnsAs/0.jpg" width="320" />
-</a>
-
+▶️ **YouTube – Setup & Erklärung**  
+https://www.youtube.com/watch?v=YGE9YTNnsAs
 
 ## ➕ Add to Home Assistant
 
