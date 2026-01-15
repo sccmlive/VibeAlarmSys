@@ -14,6 +14,7 @@ from .const import (
     CONF_ALARM_ENTITY,
     CONF_ESPHOME_DEVICE,
     CONF_ESPHOME_DEVICES,
+    CONF_ESPHOME_NODES,
     CONF_NODE_NAME,
     CONF_SEND_PANEL_NAME,
     CONF_SEND_SOURCE_TEXT,
@@ -40,6 +41,37 @@ async def _guess_esphome_node_name_from_device(hass, device_id: str) -> str | No
     return None
 
 
+async def _resolve_esphome_nodes(hass, device_ids: list[str]) -> list[str] | None:
+    """Resolve ESPHome node prefixes for a list of HA device_ids.
+
+    Prefer the ESPHome identifier (domain "esphome", ident "<node_name>").
+    Fallback to the HA device name.
+    """
+    dev_reg = async_get_dev_reg(hass)
+    nodes: list[str] = []
+
+    for dev_id in device_ids:
+        dev = dev_reg.async_get(dev_id)
+        if not dev:
+            return None
+
+        node: str | None = None
+        for domain, ident in dev.identifiers:
+            if domain == "esphome" and isinstance(ident, str) and ident.strip():
+                node = _slugify_node_name(ident)
+                break
+
+        if not node and dev.name:
+            node = _slugify_node_name(dev.name)
+
+        if not node:
+            return None
+
+        nodes.append(node)
+
+    return nodes
+
+
 class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
 
@@ -55,22 +87,27 @@ class VibrationsalarmBridgeConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             send_source_text = user_input.get(CONF_SEND_SOURCE_TEXT, DEFAULT_SEND_SOURCE_TEXT)
             trigger_entities = user_input.get(CONF_TRIGGER_ENTITIES, []) or []
 
+            # Legacy single-node field (kept for backwards compatibility)
             node_name = user_input.get(CONF_NODE_NAME, "").strip()
             if not node_name:
                 guessed = await _guess_esphome_node_name_from_device(self.hass, esphome_device_ids[0])
                 if guessed:
                     node_name = guessed
-                else:
-                    errors[CONF_NODE_NAME] = "node_required"
+
+            # NEW: store node prefix per selected device to support multi-device entries reliably.
+            esphome_nodes = await _resolve_esphome_nodes(self.hass, esphome_device_ids)
+            if not esphome_nodes:
+                errors[CONF_ESPHOME_DEVICES] = "node_required"
 
             if not errors:
-                title = f"VibeAlarmSys Bridge ({alarm_entity} → {node_name})"
+                title = f"VibeAlarmSys Bridge ({alarm_entity} → {node_name or 'ESPHome'})"
                 return self.async_create_entry(
                     title=title,
                     data={
                         CONF_ALARM_ENTITY: alarm_entity,
                         CONF_ESPHOME_DEVICES: esphome_device_ids,
                         CONF_ESPHOME_DEVICE: esphome_device_ids[0],
+                        CONF_ESPHOME_NODES: esphome_nodes,
                         CONF_NODE_NAME: node_name,
                         CONF_SEND_PANEL_NAME: send_panel_name,
                         CONF_SEND_SOURCE_TEXT: send_source_text,

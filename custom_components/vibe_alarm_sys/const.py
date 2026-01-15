@@ -3,6 +3,7 @@ DOMAIN = "vibe_alarm_sys"
 CONF_ALARM_ENTITY = "alarm_entity"
 CONF_ESPHOME_DEVICE = "esphome_device_id"
 CONF_ESPHOME_DEVICES = "esphome_device_ids"
+CONF_ESPHOME_NODES = "esphome_nodes"
 CONF_NODE_NAME = "node_name"
 CONF_TRIGGER_ENTITIES = "trigger_entities"
 

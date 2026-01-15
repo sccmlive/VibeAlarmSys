@@ -15,6 +15,7 @@ from .const import (
     CONF_ALARM_ENTITY,
     CONF_ESPHOME_DEVICE,
     CONF_ESPHOME_DEVICES,
+    CONF_ESPHOME_NODES,
     CONF_NODE_NAME,
     CONF_SEND_PANEL_NAME,
     CONF_SEND_SOURCE_TEXT,
@@ -57,25 +58,37 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not device_ids and entry.data.get(CONF_ESPHOME_DEVICE):
         device_ids = [entry.data[CONF_ESPHOME_DEVICE]]
 
+    # Optional: node prefixes stored per device (newer entries). This prevents
+    # multi-device collisions when an ESPHome identifier is temporarily missing.
+    stored_nodes: list[str] = entry.data.get(CONF_ESPHOME_NODES) or []
+
     def _slugify(val: str) -> str:
         v = val.lower()
         v = re.sub(r"[^a-z0-9_]+", "_", v)
         v = re.sub(r"_+", "_", v).strip("_")
         return v
 
-    def _node_from_device_id(dev_id: str) -> str | None:
+    def _node_from_device_id(dev_id: str, idx: int) -> str | None:
         dev_reg = dr.async_get(hass)
         dev = dev_reg.async_get(dev_id)
         if not dev:
             return None
+
+        # 0) If this entry stored per-device nodes, prefer them.
+        if idx < len(stored_nodes):
+            sn = stored_nodes[idx]
+            if isinstance(sn, str) and sn.strip():
+                return _slugify(sn)
+
         # Preferred: identifier ("esphome", "<node_name>")
         for domain, ident in dev.identifiers:
             if domain == "esphome" and isinstance(ident, str) and ident.strip():
                 return _slugify(ident)
-        # Fallback: stored node_name (legacy)
-        stored = entry.data.get(CONF_NODE_NAME)
-        if isinstance(stored, str) and stored.strip():
-            return _slugify(stored)
+        # Fallback: stored node_name (legacy single-device entries only)
+        if len(device_ids) <= 1:
+            legacy = entry.data.get(CONF_NODE_NAME)
+            if isinstance(legacy, str) and legacy.strip():
+                return _slugify(legacy)
         # Last fallback: device name
         if dev.name:
             return _slugify(dev.name)
@@ -85,8 +98,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     dev_reg = dr.async_get(hass)
     alarm_panel_name = _friendly_name(hass, alarm_entity)
     targets: list[tuple[str, str]] = []
-    for dev_id in device_ids:
-        node_prefix = _node_from_device_id(dev_id)
+    for idx, dev_id in enumerate(device_ids):
+        node_prefix = _node_from_device_id(dev_id, idx)
         if not node_prefix:
             continue
         dev = dev_reg.async_get(dev_id)
